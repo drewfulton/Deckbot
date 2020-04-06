@@ -13,8 +13,7 @@ pwd = "vojjij-wyHku8-soqmim"
 
 
 class Company(object):
-	'''
-	Object to incapsulate the overview of a company
+	''' Object to incapsulate the overview of a company
 	'''
 	def __init__(self, company_name, company_id):
 		self.id = company_id
@@ -23,21 +22,19 @@ class Company(object):
 # 		self.metrics = self.get_company_metrics()
     
 	def get_company_overview(self):
-		'''
-		Gets overview information from Databook API given a specfic Company and returns
-		a Company obect
+		'''	Gets overview information from Databook API given a specfic Company object
+		and returns a Company object
 		'''
 		path = f"/api/companies/{self.id}"
 		response = get_api(f"{endpoint}{path}")
-	# 	print(f"Request Status: {response}")
+# 		print(f"Request Status: {response}")
 		overview = json.loads(response.content)
 		for item in overview:
 			setattr(self, item, overview[item])
 
-
 	def get_company_metrics(self):
-		'''
-		Gets a list of all metrics availble for a given Company object.  Returns List
+		'''	Gets a list of all metrics availble for a given Company object. 
+		Returns List
 		'''
 		metric_list = []
 		metric_list_plain = []
@@ -51,15 +48,13 @@ class Company(object):
 		
 			
 class Metric(object):
+	'''	Object to hold company metrics
 	'''
-	Object to hold company metrics
-	'''
-	def __init__(self, metric, company_id):
+	def  __init__(self, metric, company_id):
 		self.company_id = company_id
 		for item in metric:
 			setattr(self, item, metric[item])
 		self.id = self._id
-# 		self.get_metric_details()
 	
 	def get_metric_details(self):
 		path = f"{endpoint}/api/companies/{self.company_id}/metrics/{self.id}"
@@ -70,9 +65,8 @@ class Metric(object):
 # 		print(self.name)
 	
 def get_all_companies(offline=False):
-	'''
-	Gets all companies from Databook API and returns a list of Company objects.
-	Option offline is used to pull from hard coded sample list rather than API
+	'''	Gets all companies from Databook API and returns a list of Company objects.
+	Option offline is used to pull from hard coded sample list rather than from API
 	'''
 	all_companies = []
 	if offline:
@@ -87,6 +81,9 @@ def get_all_companies(offline=False):
 	
 
 def get_api(path):
+	''' Performs a GET from the Databook API.  If token is expired, it will renew.
+	If another error occurs, error code is printed and the program is exited. 
+	'''
 	global headers
 	response = requests.get(path, headers=headers)
 	if response.status_code == 200:
@@ -99,11 +96,11 @@ def get_api(path):
 	else:
 		# Need to Add Error Handling for other issues
 		print(f"Something went wrong.  Code: {response}")
+		exit()
 		
 
 def get_token(email, pwd):
-	'''
-	Get a security token from the Databook API
+	'''	Get a security token from the Databook API
 	'''
 	global headers
 	path = '/auth/local'
@@ -112,10 +109,9 @@ def get_token(email, pwd):
 	content = json.loads(response.content)
 	token = content["token"]
 	headers = {"Authorization": f"Bearer {token}"}
-# 	print(f"Got token: {token}")
 	return headers
 
-
+# List of Companies for Testing without a call to API
 test_company_list = [
 	('Apple', '58080ff4ebbf470003ca9f7b'),
 	('Facebook','58153a9ac12a6e000f7c2bea'),

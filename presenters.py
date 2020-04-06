@@ -5,20 +5,16 @@
 # Created:	April 4, 2020
 
 import models, urllib.request, os, calendar, datetime, re, operator, statistics
-from pptx.util import Inches, Pt
-from pptx.enum.shapes import MSO_SHAPE
 from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.chart import XL_CHART_TYPE, XL_LABEL_POSITION, XL_LEGEND_POSITION
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_AUTO_SIZE, MSO_ANCHOR, PP_ALIGN
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
-from pptx.enum.text import MSO_AUTO_SIZE, MSO_ANCHOR
 from pptx.chart.data import CategoryChartData
-from pptx.enum.chart import XL_CHART_TYPE
-from pptx.enum.chart import XL_LABEL_POSITION
-from pptx.enum.chart import XL_LEGEND_POSITION
 
 class DeckbotPresenter(object):
-	'''
-	The main application logic.
+	'''	The main application logic.
 	'''
 	
 	def __init__(self, all_companies, view):
@@ -26,48 +22,49 @@ class DeckbotPresenter(object):
 		self.all_companies = all_companies
 		self.dir = os.path.dirname(os.path.abspath(__file__))
 		self.view = view
-		self.init_view()
-		self.get_company_details()
-		self.create_deckbot(self.company)
+		company = self.init_view()
+		self.get_company_details(company)
+		self.create_deckbot(company)
 		
 	def init_view(self):
+		'''	Upon initial start, get the list of available companies, and prompt user.
 		'''
-		Upon initial start, get the list of available companies, and prompt user.
-		'''
-		self.company = self.view.select_company(self.all_companies)
+		company = self.view.select_company(self.all_companies)
+		return company
 		
-	def get_company_details(self):
+	def get_company_details(self, company):
+		''' Get all the information and metrics for the company.
 		'''
-		Here we get all the information and metrics for the company.
-		'''
-# 		print(f"Now we get all the info and metrics for{self.company.name}")
+# 		print(f"Now we get all the info and metrics for{company.name}")
 # 		print("Basic vars() dump at this time")
-# 		print(vars(self.company))
+# 		print(vars(company))
 		
-		self.company.get_company_overview()
+		company.get_company_overview()
 # 		print("Basic vars() dump after get_company_overview()")
-# 		print(vars(self.company))
+# 		print(vars(company))
 		
-		self.company.metrics = self.company.get_company_metrics()
+		company.metrics = company.get_company_metrics()
 # 		print("Basic vars() dump after get_company_metrics()")
-# 		print(vars(self.company))
-		pass
+# 		print(vars(company))
+		return company
 		
 	def create_deckbot(self, company):
-		'''
-		Genererate Powerpoint FactPack with 3 main slides.
+		'''	Genererate Powerpoint FactPack with 3 main slides.
 		'''
 		ppt = Presentation()
 		
 		ppt = self.build_title_slide(ppt, company)
 		ppt = self.build_overview_slide(ppt, company)
-		ppt = self.build_metrics_slide(ppt, company)				
-		ppt.save(f"{self.dir}/exports/{self.company.name}.pptx")
+		ppt = self.build_revenue_slide(ppt, company)				
+		ppt.save(f"{self.dir}/exports/{company.name}.pptx")
 		
-		print(f"Please find your file at /exports/{self.company.name}.pptx")
+		print(f"Please find your file at /exports/{company.name}.pptx")
 		
 		
 	def build_title_slide(self, ppt, company):
+		''' Builds the title slide using existing title/subtitle placeholders.
+		Adds the company logo and photo to the slide.
+		'''
 		# Title Slide - Title Slide Layout
 		title_slide_layout = ppt.slide_layouts[0]
 		title_slide = ppt.slides.add_slide(title_slide_layout)
@@ -76,9 +73,20 @@ class DeckbotPresenter(object):
 		today = datetime.date.today().strftime("%B %d, %Y")
 		
 		logofile, extension = os.path.splitext(company.logoUrl)
-		urllib.request.urlretrieve(company.logoUrl, f"{self.dir}/assets/{company.name}{extension}")
-		logo = title_slide.shapes.add_picture(f"{self.dir}/assets/{company.name}{extension}", Inches(.5), Inches(.5), height=Inches(1.5))
-		os.remove(f"{self.dir}/assets/{company.name}{extension}")
+		try:
+			urllib.request.urlretrieve(
+				company.logoUrl, 
+				f"{self.dir}/assets/{company.name}{extension}"
+			)
+			logo = title_slide.shapes.add_picture(
+				f"{self.dir}/assets/{company.name}{extension}", 
+				Inches(.5), 
+				Inches(.5), 
+				height=Inches(1.5)
+			)
+			os.remove(f"{self.dir}/assets/{company.name}{extension}")
+		except:
+			print("Error retrieving logo from website and will be skipped.")
 		
 		latestRev = f"Data through Q{company.latestRevenue['quarter']} {company.latestRevenue['year']}"
 		title.text = f"{company.name} - Factpack"
@@ -90,16 +98,25 @@ class DeckbotPresenter(object):
 		p2 = subtitle_frame.add_paragraph()
 		p2.text = latestRev
 		
-		img = title_slide.shapes.add_picture(f"{self.dir}/assets/cover.jpg", Inches(0), Inches(5.5), height=Inches(2))
+		img = title_slide.shapes.add_picture(
+			f"{self.dir}/assets/cover.jpg", 
+			Inches(0), 
+			Inches(5.5), 
+			height=Inches(2)
+		)
 		
-
 		return ppt
 
 	def build_overview_slide(self, ppt, company):
+		''' Creates an Overview slide from a Blank slide template.  
+		General Description is broken into paragraphs for each sentence and placed
+		in one column.  Basic facts are placed in a second text box.
+		'''
 		# Overview Slide - Blank Slide Layout
 		overview_slide_layout = ppt.slide_layouts[6]
 		overview_slide = ppt.slides.add_slide(overview_slide_layout)
 		shapes = overview_slide.shapes
+		
 		# Create Title Box
 		title_sizes = {}
 		title_sizes["left"] = Inches(0)
@@ -107,8 +124,14 @@ class DeckbotPresenter(object):
 		title_sizes["width"] = Inches(10)
 		title_sizes["height"] = Inches (1)
 		title_text = [f"{company.name} Introduction"]
-
-		shapes = self.create_textbox(shapes, title_sizes, title_text, alignment=PP_ALIGN.CENTER, color=RGBColor(0,0,0), size=Pt(36))
+		shapes = self.create_textbox(
+			shapes, 
+			title_sizes, 
+			title_text, 
+			alignment=PP_ALIGN.CENTER, 
+			color=RGBColor(0,0,0), 
+			size=Pt(36)
+		)
 		
 		# Create Summary Title Box
 		sum_title_sizes = {}
@@ -117,19 +140,29 @@ class DeckbotPresenter(object):
 		sum_title_sizes["width"] = Inches(4.5)
 		sum_title_sizes["height"] = Inches (1)
 		sum_title_text = "Company Summary"
-	
-		shapes = self.create_textbox(shapes, sum_title_sizes, sum_title_text, alignment=PP_ALIGN.CENTER, color=RGBColor(0,0,0), size=Pt(24))
+		shapes = self.create_textbox(
+			shapes, 
+			sum_title_sizes, 
+			sum_title_text,
+			alignment=PP_ALIGN.CENTER, 
+			color=RGBColor(0,0,0), 
+			size=Pt(24)
+		)
 
 		# Create Summary Box
 		summary_sizes = {}
 		summary_sizes["left"] = Inches(.5)
 		summary_sizes["top"] = Inches(2)
 		summary_sizes["width"] = Inches(4.5)
-		summary_sizes["height"] = Inches (5)
-		
+		summary_sizes["height"] = Inches (5)	
 		summary_text = split_into_sentences(company.description)
-		
-		shapes = self.create_textbox(shapes, summary_sizes, summary_text, alignment=PP_ALIGN.LEFT, size=Pt(10))
+		shapes = self.create_textbox(
+			shapes, 
+			summary_sizes, 
+			summary_text, 
+			alignment=PP_ALIGN.LEFT, 
+			size=Pt(10)
+		)
 
 		# Create Facts Title Box
 		fact_title_sizes = {}
@@ -138,8 +171,14 @@ class DeckbotPresenter(object):
 		fact_title_sizes["width"] = Inches(4.5)
 		fact_title_sizes["height"] = Inches (1)
 		fact_title_text = "Company Facts"
-	
-		shapes = self.create_textbox(shapes, fact_title_sizes, fact_title_text, alignment=PP_ALIGN.CENTER, color=RGBColor(0,0,0), size=Pt(24))
+		shapes = self.create_textbox(
+			shapes, 
+			fact_title_sizes, 
+			fact_title_text, 
+			alignment=PP_ALIGN.CENTER, 
+			color=RGBColor(0,0,0), 
+			size=Pt(24)
+		)
 
 		# Create Facts Box
 		facts_sizes = {}
@@ -147,24 +186,61 @@ class DeckbotPresenter(object):
 		facts_sizes["top"] = Inches(2)
 		facts_sizes["width"] = Inches(4.5)
 		facts_sizes["height"] = Inches (5)
-		
 		facts_text = []
-		facts_text.append((("Revenue: ", {"bold":True}), (f"US$ {company.latestRevenue['valueUSD']} bn", {"bold":False})))
-		facts_text.append((("Employees: ", {"bold":True}), (f"{'{:,d}'.format(int(company.employees*1000000))}", {"bold":False})))
-		facts_text.append((("Currency: ", {"bold":True}), (f"{company.currency}", {"bold":False})))
-		facts_text.append((("Type: ", {"bold":True}), (f"{company.type}", {"bold":False})))
-		facts_text.append((("Website: ", {"bold":True}), (f"{company.website}", {"bold":False, "url":company.website})))
-		facts_text.append((("Headquarters: ", {"bold":True}), (f"{company.address}", {"bold":False})))
-		facts_text.append((("Current Quarter: ", {"bold":True}), (f"{company.currentQuarter}", {"bold":False})))
-		facts_text.append((("Current Quarter Ends: ", {"bold":True}), (company.quarterEnd[0:10] , {"bold":False})))
-		facts_text.append((("Fiscal Year End: ", {"bold":True}), (calendar.month_name[company.fiscalYearEnd], {"bold":False})))
-		
-		shapes = self.create_textbox(shapes, facts_sizes, facts_text, alignment=PP_ALIGN.LEFT, size=Pt(10), space_after=Pt(10))
+		facts_text.append((
+			("Revenue: ", {"bold":True}), 
+			(f"US$ {company.latestRevenue['valueUSD']} bn", {"bold":False})
+		))
+		facts_text.append((
+			("Employees: ", {"bold":True}), 
+			(f"{'{:,d}'.format(int(company.employees*1000000))}", {"bold":False})
+		))
+		facts_text.append((
+			("Currency: ", {"bold":True}), 
+			(f"{company.currency}", {"bold":False})
+		))
+		facts_text.append((
+			("Type: ", {"bold":True}), 
+			(f"{company.type}", {"bold":False})
+		))
+		facts_text.append((
+			("Website: ", {"bold":True}), 
+			(f"{company.website}", {"bold":False, "url":company.website})
+		))
+		facts_text.append((
+			("Headquarters: ", {"bold":True}), 
+			(f"{company.address}", {"bold":False})
+		))
+		facts_text.append((
+			("Current Quarter: ", {"bold":True}), 
+			(f"{company.currentQuarter}", {"bold":False})
+		))
+		facts_text.append((
+			("Current Quarter Ends: ", {"bold":True}), 
+			(company.quarterEnd[0:10] , {"bold":False})
+		))
+		facts_text.append((
+			("Fiscal Year End: ", {"bold":True}), 
+			(calendar.month_name[company.fiscalYearEnd], {"bold":False})
+		))
+		shapes = self.create_textbox(
+			shapes, 
+			facts_sizes, 
+			facts_text, 
+			alignment=PP_ALIGN.LEFT, 
+			size=Pt(10), 
+			space_after=Pt(10)
+		)
 
-		
 		return ppt
 
-	def build_metrics_slide(self, ppt, company):
+	def build_revenue_slide(self, ppt, company):
+		''' Creates a Revenue Metrics slide with two charts and corresponding info.
+		First chart compares the company's revenue from teh last 3 years against the 
+		sector's median revenues.  Second chart compares the company's Latest Revenue
+		against its peers.  Basic analysis for each chart is included.
+		'''
+		
 		metrics_slide_layout = ppt.slide_layouts[6]
 		metrics_slide = ppt.slides.add_slide(metrics_slide_layout)
 		shapes = metrics_slide.shapes
@@ -172,45 +248,56 @@ class DeckbotPresenter(object):
 		# Get Metric Details
 		for m in company.metrics:
 			if m.name == "Revenue":
-				rev_metric = m
+				revenue = m
 				break
 		
-		rev_metric.get_metric_details()
+		revenue.get_metric_details()
 		
 # 		print("Metric Details: ")
-# 		print(vars(rev_metric))
+# 		print(vars(revenue))
 # 		print("\n\n")
-# 
-		
-		# Create Title Box
+
+		# Title Box
 		title_sizes = {}
 		title_sizes["left"] = Inches(0)
 		title_sizes["top"] = Inches(0.25)
 		title_sizes["width"] = Inches(10)
 		title_sizes["height"] = Inches (.5)
-		title_text = [f"{company.name} {rev_metric.name} Metrics"]
+		title_text = [f"{company.name} {revenue.name} Metrics"]
+		shapes = self.create_textbox(
+			shapes, 
+			title_sizes, 
+			title_text, 
+			alignment=PP_ALIGN.CENTER, 
+			color=RGBColor(0,0,0), 
+			size=Pt(36)
+		)
 
-		shapes = self.create_textbox(shapes, title_sizes, title_text, alignment=PP_ALIGN.CENTER, color=RGBColor(0,0,0), size=Pt(36))
-
-
-		# Create Summary Box
+		# Summary Box
 		sum_sizes = {}
 		sum_sizes["left"] = Inches(.5)
 		sum_sizes["top"] = Inches(1)
 		sum_sizes["width"] = Inches(9)
 		sum_sizes["height"] = Inches (1)
-		sum_text = rev_metric.description.replace('\n', ' ')
-
-		shapes = self.create_textbox(shapes, sum_sizes, sum_text, alignment=PP_ALIGN.CENTER, color=RGBColor(0,0,0), size=Pt(10))
+		sum_text = revenue.description.replace('\n', ' ')
+		shapes = self.create_textbox(
+			shapes, 
+			sum_sizes, 
+			sum_text, 
+			alignment=PP_ALIGN.CENTER, 
+			color=RGBColor(0,0,0), 
+			size=Pt(10)
+		)
 		
-		# Latests Revenue vs Peers Chart
+		
+		# Latests Revenue vs Peers Section
 		latest_rev_v_peers_chart_data = CategoryChartData()
 		latest_rev_v_peers_chart_data.categories = ['Latest Values']
 		data = {}
 		categories = []
 		values = []
 		i=1
-		for c in rev_metric.chart[0]["companies"]:
+		for c in revenue.chart[0]["companies"]:
 			data[c["name"]] = c["data"][0]["value"]
 			if i==1:
 				period_label = c["data"][0]["label"]
@@ -224,7 +311,11 @@ class DeckbotPresenter(object):
 				company_position = sorted_data.index(d)+1
 			
 		latest_rev_v_peers_chart_data.categories = categories
-		latest_rev_v_peers_chart_data.add_series("Latest Values", values, number_format="#,###.#")
+		latest_rev_v_peers_chart_data.add_series(
+			"Latest Values", 
+			values, 
+			number_format="#,###.#"
+		)
 		x, y, cx, cy = Inches(5.25), Inches(2.5), Inches(4.5), Inches(4)
 		graphic_frame = metrics_slide.shapes.add_chart(	
 			XL_CHART_TYPE.BAR_CLUSTERED, x, y, cx, cy, latest_rev_v_peers_chart_data
@@ -248,7 +339,14 @@ class DeckbotPresenter(object):
 		latest_rev_title_sizes["top"] = Inches(1.5)
 		latest_rev_title_sizes["width"] = Inches(4.5)
 		latest_rev_title_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, latest_rev_title_sizes, latest_rev_title_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(24))
+		shapes = self.create_textbox(
+			shapes, 
+			latest_rev_title_sizes, 
+			latest_rev_title_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(24)
+		)
 
 		latest_rev_det_text = []
 		latest_rev_det_text.append((("Revenue (USD bn)", {"bold":True, "size": Pt(14)}),))
@@ -258,31 +356,41 @@ class DeckbotPresenter(object):
 		latest_rev_det_sizes["top"] = Inches(2)
 		latest_rev_det_sizes["width"] = Inches(4.5)
 		latest_rev_det_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, latest_rev_det_sizes, latest_rev_det_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(14))
+		shapes = self.create_textbox(
+			shapes, 
+			latest_rev_det_sizes, 
+			latest_rev_det_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(14)
+		)
 		
 		# Analysis Text
 		period_label_plain = {}
 		period_label_plain["ltm"] = "last twelve months"
 		period_label_plain["y"] = "year"
-		
 		company_count = len(sorted_data)
 		quartile = get_quartile(company_position/company_count)
-		
-		
 		latest_rev_anal_text = f"{company.name} Revenue is in the {quartile} quartile of the peer group over the {period_label_plain[period]}."
 		latest_rev_anal_sizes = {}
 		latest_rev_anal_sizes["left"] = Inches(5.25)
 		latest_rev_anal_sizes["top"] = Inches(6.5)
 		latest_rev_anal_sizes["width"] = Inches(4.5)
 		latest_rev_anal_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, latest_rev_anal_sizes, latest_rev_anal_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(14))
+		shapes = self.create_textbox(
+			shapes, 
+			latest_rev_anal_sizes, 
+			latest_rev_anal_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(14)
+		)
 
 
-
-		# Latest Rev for Last 3 years
+		# Revenue for Last 3 Years Section
 		last_three_chart_data = CategoryChartData()
 		last_three_data = {}
-		for c in rev_metric.chart[0]["companies"]:
+		for c in revenue.chart[0]["companies"]:
 			last_three_data[c["name"]] = {}
 			for p in c["data"]:
 				if "Last 3 years" in p["groups"]:
@@ -299,19 +407,20 @@ class DeckbotPresenter(object):
 			company_data.append(last_three_data[company.name][cat])
 			median_data[cat] = [] 
 			for comp in last_three_data:
-# 				print(f"Company: {comp}")
 				median_data[cat].append(last_three_data[comp][cat])
-# 			print(f"Data for {cat}: {median_data[cat]}")
 			medians[cat] = statistics.median(median_data[cat])
 		
 		med = []
 		for m in medians:
 			med.append(medians[m])
-# 		print(f"Medians: {med}")	
-		last_three_chart_data.add_series(company.name, company_data, number_format="#,###.#")
+		last_three_chart_data.add_series(
+			company.name, 
+			company_data, 
+			number_format="#,###.#"
+		)
 		last_three_chart_data.add_series("Medians", med, number_format="#,###.#")
 		x, y, cx, cy = Inches(.5), Inches(2.5), Inches(4.5), Inches(4)
-		last_three_frame = metrics_slide.shapes.add_chart(
+		last_three_frame = metrics_slide.shapes.add_chart( 
 			XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, last_three_chart_data
 		)
 		
@@ -338,17 +447,35 @@ class DeckbotPresenter(object):
 		last_three_rev_title_sizes["top"] = Inches(1.5)
 		last_three_rev_title_sizes["width"] = Inches(4.5)
 		last_three_rev_title_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, last_three_rev_title_sizes, last_three_rev_title_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(24))
+		shapes = self.create_textbox(
+			shapes, 
+			last_three_rev_title_sizes, 
+			last_three_rev_title_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(24)
+		)
 
 		last_three_rev_det_text = []
-		last_three_rev_det_text.append((("Revenue (USD bn)", {"bold":True, "size": Pt(14)}),))
-		last_three_rev_det_text.append(((f"{cats[0]} - {cats[-1]}", {"bold":False, "size": Pt(12)}),))
+		last_three_rev_det_text.append((
+			("Revenue (USD bn)", {"bold":True, "size": Pt(14)}),
+		))
+		last_three_rev_det_text.append((
+			(f"{cats[0]} - {cats[-1]}", {"bold":False, "size": Pt(12)}),
+		))
 		last_three_rev_det_sizes = {}
 		last_three_rev_det_sizes["left"] = Inches(0.5)
 		last_three_rev_det_sizes["top"] = Inches(2)
 		last_three_rev_det_sizes["width"] = Inches(4.5)
 		last_three_rev_det_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, last_three_rev_det_sizes, last_three_rev_det_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(14))
+		shapes = self.create_textbox(
+			shapes, 
+			last_three_rev_det_sizes, 
+			last_three_rev_det_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(14)
+		)
 		
 		# Analysis Text
 		period_label_plain = {}
@@ -361,11 +488,9 @@ class DeckbotPresenter(object):
 			direction = "held steady"
 		else:
 			direction = "fell"
-		
-		
+	
 		company_count = len(sorted_data)
 		quartile = get_quartile(company_position/company_count)
-		
 		
 		last_three_rev_anal_text = f"{company.name} Revenue {direction} from USD{company_data[0]}B in FY{cats[0]} to USD{company_data[-1]}B at the end of Q{company.latestRevenueGrowth['quarter']} FY{company.latestRevenueGrowth['year']}."
 		last_three_rev_anal_sizes = {}
@@ -373,9 +498,15 @@ class DeckbotPresenter(object):
 		last_three_rev_anal_sizes["top"] = Inches(6.5)
 		last_three_rev_anal_sizes["width"] = Inches(4.5)
 		last_three_rev_anal_sizes["height"] = Inches (.5)
-		shapes = self.create_textbox(shapes, last_three_rev_anal_sizes, last_three_rev_anal_text, alignment=PP_ALIGN.LEFT, color=RGBColor(0,0,0), size=Pt(14))
+		shapes = self.create_textbox(
+			shapes, 
+			last_three_rev_anal_sizes, 
+			last_three_rev_anal_text, 
+			alignment=PP_ALIGN.LEFT, 
+			color=RGBColor(0,0,0), 
+			size=Pt(14)
+		)
 
-				
 		return ppt
 
 	def set_shape_colors(
@@ -385,8 +516,7 @@ class DeckbotPresenter(object):
 		fill_color=RGBColor(255,255,255), 
 		line_width = Pt(0)
 		):
-		'''
-		Set colors for fill and lines for a given shape
+		'''	Set colors for fill and lines for a given shape
 		'''
 		fill = shape.fill
 		fill.solid()
@@ -398,9 +528,18 @@ class DeckbotPresenter(object):
 		return shape
 	
 
-	def create_textbox(self, shapes, dim, content, space_after=None, color=RGBColor(0,0,0), wordwrap=True, alignment=PP_ALIGN.CENTER, size=None):
-		'''
-		Creates a text box given the dimensions
+	def create_textbox(
+		self, 
+		shapes, 
+		dim, 
+		content, 
+		space_after=None, 
+		color=RGBColor(0,0,0), 
+		wordwrap=True, 
+		alignment=PP_ALIGN.CENTER, 
+		size=None
+		):
+		'''	Creates a text box given the dimensions, content, and formatting
 		'''		
 		shape = shapes.add_textbox(dim["left"], dim["top"], dim["width"], dim["height"])
 		text_frame = shape.text_frame
@@ -409,6 +548,7 @@ class DeckbotPresenter(object):
 		text_frame.word_wrap = wordwrap
 		i = 0
 		if isinstance(content, str):
+			# Single String paragraph
 			p = text_frame.paragraphs[0]
 			p.alignment = alignment
 			p.space_after=space_after
@@ -417,8 +557,8 @@ class DeckbotPresenter(object):
 			font = run.font
 			font.color.rgb = color
 			font.size = size
-
 		else:
+			# Multiple paragraph
 			for para in content:
 				if i == 0:
 					p = text_frame.paragraphs[0]
@@ -443,8 +583,6 @@ class DeckbotPresenter(object):
 							font.size = r[1]["size"]
 						if "url" in r[1]:
 							run.hyperlink.address = r[1]["url"]			
-
-					
 				else: 
 					# Just a plain formatted paragraph
 					run = p.add_run()
@@ -452,7 +590,6 @@ class DeckbotPresenter(object):
 					font = run.font
 					font.color.rgb = color
 					font.size = size
-			
 		
 		return shapes
 

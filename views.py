@@ -6,12 +6,10 @@
 
 
 class DeckbotCLI(object):
-	'''
-	This class creates a simple CLI option for creating user input
+	''' Creates a simple CLI option for creating user input to select a company
 	'''
 	def ___init___(self):
-		'''
-		Display list of company options and ask for Input from User in CLI
+		''' Display list of company options and ask for Input from User in CLI
 		'''
 		self.company_list = company_list
 		
@@ -22,9 +20,16 @@ class DeckbotCLI(object):
 		for comp in self.company_list:
 			print(f"[{i}] - {comp.name}")
 			i = i+1
-		sel = input("Enter Selection: ")
-		selected_company = company_list[int(sel)-1]
+		while True:
+			try:
+				sel = input("Enter Selection: ")
+				sel = int(sel)
+				selected_company = company_list[int(sel)-1]
+				break
+			except ValueError: 
+				print("Your selection is not a valid integer.  Please try again.")
+			except IndexError:
+				print("Your selection is not in the correct range.  Please try again.")
 		
-# 		print(f"Selected Company: {selected_company.name} - {selected_company.id}")
 		return selected_company
 
