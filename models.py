@@ -18,8 +18,6 @@ class Company(object):
     def __init__(self, company_name, company_id):
         self.id = company_id
         self.name = company_name
-#         self.get_company_overview()
-#         self.metrics = self.get_company_metrics()
     
     def get_company_overview(self):
         '''    Gets overview information from Databook API given a specfic Company object
@@ -27,7 +25,6 @@ class Company(object):
         '''
         path = f"/api/companies/{self.id}"
         response = get_api(f"{endpoint}{path}")
-#         print(f"Request Status: {response}")
         overview = json.loads(response.content)
         for item in overview:
             setattr(self, item, overview[item])
@@ -43,7 +40,6 @@ class Company(object):
         for metric in metrics:
             metric_list.append(Metric(metric, self.id))
             metric_list_plain.append(metric["name"])
-#         print(f"Metric List: {metric_list_plain}")
         return metric_list
         
             
@@ -62,7 +58,6 @@ class Metric(object):
         details = json.loads(response.content)
         for d in details:        
             setattr(self, d, details[d])    
-#         print(self.name)
     
 def get_all_companies(offline=False):
     '''    Gets all companies from Databook API and returns a list of Company objects.
@@ -118,7 +113,9 @@ test_company_list = [
     ('Accenture','5809bcf577b61a00034adacf'),
     ('Amazon','5809bc2777b61a00034ada25'),
     ('Heineken','584d79ba083592000413cf7a'),
-    ('Salesforce','5809dc87557fb000039bb28a')
+    ('Salesforce','5809dc87557fb000039bb28a'),
+    ('A.G. Barr','5b588a57deaaf8000f3f4a4e'),
+    ('Delta Air Lines','5809bb4b77b61a00034ad967')
     ]
 
 

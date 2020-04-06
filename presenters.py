@@ -35,17 +35,8 @@ class DeckbotPresenter(object):
     def get_company_details(self, company):
         ''' Get all the information and metrics for the company.
         '''
-#         print(f"Now we get all the info and metrics for{company.name}")
-#         print("Basic vars() dump at this time")
-#         print(vars(company))
-        
         company.get_company_overview()
-#         print("Basic vars() dump after get_company_overview()")
-#         print(vars(company))
-        
         company.metrics = company.get_company_metrics()
-#         print("Basic vars() dump after get_company_metrics()")
-#         print(vars(company))
         return company
         
     def create_deckbot(self, company):
@@ -253,10 +244,6 @@ class DeckbotPresenter(object):
         
         revenue.get_metric_details()
         
-#         print("Metric Details: ")
-#         print(vars(revenue))
-#         print("\n\n")
-
         # Title Box
         title_sizes = {}
         title_sizes["left"] = Inches(0)
@@ -396,7 +383,6 @@ class DeckbotPresenter(object):
                 if "Last 3 years" in p["groups"]:
                     last_three_data[c["name"]][p["label"]] = p["value"]
                 
-#         print(f"Last 3: {last_three_data}")
         cats = list(last_three_data[company.name].keys())
         cats.reverse()
         last_three_chart_data.categories = cats
@@ -537,6 +523,7 @@ class DeckbotPresenter(object):
         color=RGBColor(0,0,0), 
         wordwrap=True, 
         alignment=PP_ALIGN.CENTER, 
+        auto_size=MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE,
         size=None
         ):
         '''    Creates a text box given the dimensions, content, and formatting
