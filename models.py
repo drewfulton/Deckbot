@@ -4,12 +4,10 @@
 # Author:    Drew Fulton
 # Created:    April 2020
 
-import requests, json
+import requests, json, configparser
 
 endpoint = "https://api.trydatabook.com"
 headers = {"Authorization": "Bearer "}
-email = "drew@drewfulton.com"
-pwd = "vojjij-wyHku8-soqmim"
 
 
 class Company(object):
@@ -85,7 +83,7 @@ def get_api(path):
         return response
     elif response.status_code == 401:
         # Refresh security token and get API again.
-        headers = get_token(email, pwd)
+        headers = get_token()
         response = get_api(path)
         return response
     else:
@@ -94,10 +92,11 @@ def get_api(path):
         exit()
         
 
-def get_token(email, pwd):
+def get_token():
     ''' Get a security token from the Databook API
     '''
     global headers
+    email, pwd = get_login()
     path = '/auth/local'
     body = {"email": email, "password": pwd}
     response = requests.post(f"{endpoint}{path}", data=body)
@@ -105,6 +104,17 @@ def get_token(email, pwd):
     token = content["token"]
     headers = {"Authorization": f"Bearer {token}"}
     return headers
+
+def get_login():
+	''' Get login info from config.ini
+	'''
+	config = configparser.ConfigParser()
+	config.read("config.ini")
+	email = config.get("login", "email")
+	password = config.get("login", "password")
+	return (email, password)
+    
+
 
 # List of Companies for Testing without a call to API
 test_company_list = [
