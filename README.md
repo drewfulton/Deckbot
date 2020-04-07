@@ -4,7 +4,6 @@ Goal: Given a CompanyID, produce a powerpoint deck that contains at least 3 slid
 	
 ## MVP Structure
 - deckbot.py
-  -	Main Application
   -	Main Application.
 - models.py
   - Data management, pulls company and financial data from Databook API.
