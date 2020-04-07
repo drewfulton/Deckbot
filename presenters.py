@@ -18,7 +18,7 @@ class DeckbotPresenter(object):
     '''
     
     def __init__(self, all_companies, view):
-        models.get_token(models.email, models.pwd)
+        models.get_token()
         self.all_companies = all_companies
         self.dir = os.path.dirname(os.path.abspath(__file__))
         self.view = view
