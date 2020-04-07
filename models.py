@@ -96,7 +96,7 @@ def get_token():
     ''' Get a security token from the Databook API
     '''
     global headers
-    email, pwd = get_config()
+    email, pwd = get_login()
     path = '/auth/local'
     body = {"email": email, "password": pwd}
     response = requests.post(f"{endpoint}{path}", data=body)
@@ -105,7 +105,9 @@ def get_token():
     headers = {"Authorization": f"Bearer {token}"}
     return headers
 
-def get_config():
+def get_login():
+	''' Get login info from config.ini
+	'''
 	config = configparser.ConfigParser()
 	config.read("config.ini")
 	email = config.get("login", "email")
