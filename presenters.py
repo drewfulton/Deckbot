@@ -2,7 +2,7 @@
 # Name:        presenters.py
 # Purpose:     Application Logic
 # Author:    Drew Fulton
-# Created:    April 4, 2020
+# Created:    April 2020
 
 import models, urllib.request, os, calendar, datetime, re, operator, statistics
 from pptx import Presentation
@@ -14,7 +14,7 @@ from pptx.dml.color import RGBColor
 from pptx.chart.data import CategoryChartData
 
 class DeckbotPresenter(object):
-    '''    The main application logic.
+    ''' The main application logic.
     '''
     
     def __init__(self, all_companies, view):
@@ -27,7 +27,7 @@ class DeckbotPresenter(object):
         self.create_deckbot(company)
         
     def init_view(self):
-        '''    Upon initial start, get the list of available companies, and prompt user.
+        ''' Upon initial start, get the list of available companies, and prompt user.
         '''
         company = self.view.select_company(self.all_companies)
         return company
@@ -40,7 +40,7 @@ class DeckbotPresenter(object):
         return company
         
     def create_deckbot(self, company):
-        '''    Genererate Powerpoint FactPack with 3 main slides.
+        ''' Genererate Powerpoint FactPack with 3 main slides.
         '''
         ppt = Presentation()
         
@@ -506,7 +506,7 @@ class DeckbotPresenter(object):
         fill_color=RGBColor(255,255,255), 
         line_width = Pt(0)
         ):
-        '''    Set colors for fill and lines for a given shape
+        ''' Set colors for fill and lines for a given shape
         '''
         fill = shape.fill
         fill.solid()
@@ -530,7 +530,7 @@ class DeckbotPresenter(object):
         auto_size=MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE,
         size=None
         ):
-        '''    Creates a text box given the dimensions, content, and formatting
+        ''' Creates a text box given the dimensions, content, and formatting
         '''        
         shape = shapes.add_textbox(dim["left"], dim["top"], dim["width"], dim["height"])
         text_frame = shape.text_frame
@@ -585,6 +585,7 @@ class DeckbotPresenter(object):
         return shapes
 
 def get_quartile(percentage):
+    ''' Calculate quartile given a percentage. '''
     if percentage > .75:
         quartile = "top"
     elif .5 > percentage >=.75:
@@ -605,6 +606,7 @@ acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
 websites = "[.](com|net|org|io|gov)"
 
 def split_into_sentences(text):
+    ''' Splits a paragraph into a list of sentences.'''
     text = " " + text + "  "
     text = text.replace("\n"," ")
     text = re.sub(prefixes,"\\1<prd>",text)

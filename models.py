@@ -2,7 +2,7 @@
 # Name:        models.py
 # Purpose:     Access, Manage, and Hold Data
 # Author:    Drew Fulton
-# Created:    April 4, 2020
+# Created:    April 2020
 
 import requests, json
 
@@ -13,14 +13,14 @@ pwd = "vojjij-wyHku8-soqmim"
 
 
 class Company(object):
-    ''' Object to incapsulate the overview of a company
+    ''' Object to incapsulate the company's data
     '''
     def __init__(self, company_name, company_id):
         self.id = company_id
         self.name = company_name
     
     def get_company_overview(self):
-        '''    Gets overview information from Databook API given a specfic Company object
+        ''' Gets overview information from Databook API given a specfic Company object
         and returns a Company object
         '''
         path = f"/api/companies/{self.id}"
@@ -30,7 +30,7 @@ class Company(object):
             setattr(self, item, overview[item])
 
     def get_company_metrics(self):
-        '''    Gets a list of all metrics availble for a given Company object. 
+        ''' Gets a list of all metrics availble for a given Company object. 
         Returns List
         '''
         metric_list = []
@@ -44,7 +44,7 @@ class Company(object):
         
             
 class Metric(object):
-    '''    Object to hold company metrics
+    ''' Object to hold company metrics
     '''
     def  __init__(self, metric, company_id):
         self.company_id = company_id
@@ -60,7 +60,7 @@ class Metric(object):
             setattr(self, d, details[d])    
     
 def get_all_companies(offline=False):
-    '''    Gets all companies from Databook API and returns a list of Company objects.
+    ''' Gets all companies from Databook API and returns a list of Company objects.
     Option offline is used to pull from hard coded sample list rather than from API
     '''
     all_companies = []
@@ -95,7 +95,7 @@ def get_api(path):
         
 
 def get_token(email, pwd):
-    '''    Get a security token from the Databook API
+    ''' Get a security token from the Databook API
     '''
     global headers
     path = '/auth/local'
