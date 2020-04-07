@@ -11,6 +11,9 @@ Goal: Given a CompanyID, produce a powerpoint deck that contains at least 3 slid
   - Creates a CLI input for user to select a company from a list and sends Company object to Presenter for processing.
 - presenters.py
   - Takes Company object from view, pulls data for that company from Model, and generates a powerpoint presentation using python-pptx.
+- config.ini
+  - Config.ini must be created by end user using config-template.ini as an example.  A valid login for Databook must be used.  This is done to prevent exposure of user credentials on github.
+
 	
 ## Dependencies
 - requests
