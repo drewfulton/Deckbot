@@ -46,7 +46,11 @@ class DeckbotPresenter(object):
         
         ppt = self.build_title_slide(ppt, company)
         ppt = self.build_overview_slide(ppt, company)
-        ppt = self.build_revenue_slide(ppt, company)                
+        ppt = self.build_revenue_slide(ppt, company)   
+        
+        if not os.path.exists(f"{self.dir}/exports"):
+        	os.mkdir(f"{self.dir}/exports") 
+                     
         ppt.save(f"{self.dir}/exports/{company.name}.pptx")
         
         print(f"Please find your file at /exports/{company.name}.pptx")
