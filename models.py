@@ -13,9 +13,9 @@ headers = {"Authorization": "Bearer "}
 class Company(object):
     ''' Object to incapsulate the company's data
     '''
-    def __init__(self, company_name, company_id):
+    def __init__(self, company_id, company_name=None):
         self.id = company_id
-        self.name = company_name
+       	self.name = company_name
     
     def get_company_overview(self):
         ''' Gets overview information from Databook API given a specfic Company object
@@ -64,12 +64,12 @@ def get_all_companies(offline=False):
     all_companies = []
     if offline:
         for company in test_company_list:
-            all_companies.append(Company(company[0],company[1]))
+            all_companies.append(Company(company[1], company[0]))
     else:
         response = get_api(f"{endpoint}/api/companies/")
         companies = json.loads(response.content)
         for company in companies:
-            all_companies.append(Company(company['name'],company['_id']))
+            all_companies.append(Company(company['_id'], company['name']))
     return all_companies
     
 
@@ -86,6 +86,10 @@ def get_api(path):
         headers = get_token()
         response = get_api(path)
         return response
+    elif response.status_code == 500:
+    	# Error
+    	print(f"The server did not accept the company_id")
+    	exit()
     else:
         # Need to Add Error Handling for other issues
         print(f"Something went wrong.  Code: {response}")
